@@ -1,0 +1,70 @@
+import serial  # Import the serial library for serial port communication
+import mysql.connector  # Import the MySQL connector library to interact with MySQL database
+
+# Establish a connection to the MySQL database with specified credentials and database
+db = mysql.connector.connect(
+    host="localhost",  # Database server address
+    user="root",  # Database username
+    password="1593572648k",  # Database password
+    database="cu_barika"  # Database name
+)
+
+# SQL query to create a new database if it doesn't exist
+create_database_query = "CREATE DATABASE IF NOT EXISTS cu_barika"
+cursor = db.cursor()  # Create a cursor object to execute SQL queries
+cursor.execute(create_database_query)  # Execute the SQL query to create the database
+print("Database created successfully or already exists.")  # Print confirmation message
+
+# Switch to the newly created or existing database
+db.database = "cu_barika"
+
+# SQL query to create a new table for storing RFID card data if it doesn't exist
+create_table_query = """
+CREATE TABLE IF NOT EXISTS rfid_cards (
+    id INT AUTO_INCREMENT PRIMARY KEY,  # Unique ID for each record, auto-incremented
+    card_code VARCHAR(255) UNIQUE,  # RFID card code, must be unique
+    full_name VARCHAR(255),  # Cardholder's full name
+    college VARCHAR(255)  # Cardholder's college
+)
+"""
+cursor.execute(create_table_query)  # Execute the SQL query to create the table
+print("Table rfid_cards created successfully or already exists.")  # Print confirmation message
+
+# Initialize the serial port connection with the specified port and baud rate
+ser = serial.Serial('COM6', 9600)  # Change 'COM6' to the serial port you are using
+
+def read_from_serial():
+    while True:  # Infinite loop to continuously read from serial port
+        if ser.in_waiting > 0:  # Check if data is waiting in the serial buffer
+            line = ser.readline().decode('utf-8').strip('\r\n')  # Read a line from the serial port, decode, and strip newline characters
+            if line.startswith("UID tag :"):  # Check if the line starts with "UID tag :" indicating an RFID tag read
+                card_code = ' '.join(line.split()[3:])  # Extract the card code from the line
+                print(f"Received card code: {card_code}")  # Print the received card code
+
+                # Prompt the user for additional information about the cardholder
+                full_name = input("Enter full name: ")  # Ask for the cardholder's full name
+                college = input("Enter college name: ")  # Ask for the cardholder's college
+
+                # Save the card information to the database
+                save_to_database(card_code, full_name, college)
+
+def save_to_database(card_code, full_name, college):
+    cursor = db.cursor()  # Use the existing database connection to create a cursor object
+
+    # SQL query to insert the card information into the database
+    insert_query = "INSERT INTO rfid_cards (card_code, full_name, college) VALUES (%s, %s, %s)"
+    data = (card_code, full_name, college)  # Data to be inserted
+
+    cursor.execute(insert_query, data)  # Execute the SQL query with the data
+    db.commit()  # Commit the transaction to save changes to the database
+
+    print("Data saved successfully to database.")  # Print confirmation message
+
+try:
+    read_from_serial()  # Call the function to start reading from serial port
+except KeyboardInterrupt:  # Catch the interrupt signal (Ctrl+C)
+    print("Program interrupted")  # Print a message indicating the program was interrupted
+finally:  # Ensure these actions are performed before the program exits
+    cursor.close()  # Close the cursor
+    db.close()  # Close the database connection
+    ser.close()  # Close the serial port connection
