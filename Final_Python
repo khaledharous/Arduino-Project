@@ -1,0 +1,47 @@
+import mysql.connector
+import serial
+import time
+
+# Database connection setup
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="1593572648k",
+    database="cu_barika"
+)
+cursor = db.cursor()
+
+# Serial connection setup (adjust the port and baudrate as per your setup)
+ser = serial.Serial('COM6', 9600, timeout=1)
+
+def send_command(command):
+    ser.write(command.encode('utf-8'))
+    time.sleep(0.1)
+
+def read_from_serial():
+    try:
+        while True:
+            if ser.in_waiting > 0:
+                line = ser.readline().decode('utf-8').strip()
+                # Check if the received line contains "UID tag :"
+                if line.startswith("UID tag :"):
+                    card_code = line.split("UID tag :")[1].strip()  # Extract the card code
+                    print(f"Received card code: {card_code}")
+                    
+                    # Parameterized query to prevent SQL injection
+                    cursor.execute("SELECT * FROM rfid_cards WHERE card_code = %s", (card_code,))
+                    if cursor.fetchone() is not None:
+                        send_command("open\n")
+                        time.sleep(5)  # Time to close the door
+                        send_command("close\n")
+                    else:
+                        print("Card is not registered.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        ser.close()
+        cursor.close()
+        db.close()
+
+if __name__ == "__main__":
+    read_from_serial()
