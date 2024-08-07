@@ -1,0 +1,35 @@
+const int relayPin = 2;
+
+void setup() {
+  // إعداد المنفذ D2 كمنفذ خرج
+  pinMode(relayPin, OUTPUT);
+  
+  // بدء تشغيل المنفذ بإطفاء المصباح (إعداد المنفذ إلى LOW)
+  digitalWrite(relayPin, LOW);
+  
+  // بدء الاتصال التسلسلي بسرعة 9600 بود
+  Serial.begin(9600);
+}
+
+void loop() {
+  // التحقق من وجود بيانات في الـ Serial
+  if (Serial.available() > 0) {
+    // قراءة البيانات من الـ Serial
+    String command = Serial.readStringUntil('\n');
+    
+    // إزالة المسافات البيضاء الزائدة
+    command.trim();
+    
+    // التحقق من الأمر المرسل
+    if (command == "ON") {
+      digitalWrite(relayPin, HIGH); // تشغيل المصباح
+      Serial.println("Light is ON");
+    } else if (command == "OFF") {
+      digitalWrite(relayPin, LOW); // إطفاء المصباح
+      Serial.println("Light is OFF");
+    } else {
+      Serial.println("Invalid command");
+    }
+  }
+}
+
