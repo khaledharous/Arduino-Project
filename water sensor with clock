@@ -1,0 +1,74 @@
+#include <RtcDS1302.h>
+#include <ThreeWire.h>
+
+//Water Sensor to 2
+// clk to 6
+// Data to 7
+// SRT to 8
+
+// RTC DS1302 pin connections
+const int kCePin   = 8;  // Chip Enable
+const int kIoPin   = 7;  // Data
+const int kSclkPin = 6;  // Serial Clock
+
+// Create an instance of the ThreeWire class
+ThreeWire myWire(kIoPin, kSclkPin, kCePin); // IO, SCLK, CE
+
+// Create an instance of the RtcDS1302 class
+RtcDS1302<ThreeWire> rtc(myWire);
+
+// Water sensor pin and LED pin
+const int sensorPin = 2;  // Pin where the sensor is connected
+const int ledPin = 13;    // Optional: LED to indicate the status
+
+void setup() {
+  // Set up pins
+  pinMode(sensorPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Initialize RTC
+  rtc.Begin();
+
+  // Set the RTC time (only needed once)
+  RtcDateTime setTime(2024, 8, 15, 12,41, 0); // Set to August 14, 2024, 12:00:00
+  rtc.SetDateTime(setTime);
+  
+  // After uploading, comment out the rtc.SetDateTime(setTime); line to avoid resetting the time
+}
+
+void loop() {
+  // Get the current time from the RTC
+  RtcDateTime now = rtc.GetDateTime();
+
+  // Print the current time in HH:MM:SS format
+  Serial.print(now.Hour());
+  Serial.print(":");
+  Serial.print(now.Minute());
+  Serial.print(":");
+  Serial.print(now.Second());
+  Serial.print(" | ");
+
+  // Print the current date in YYYY/MM/DD format
+  Serial.print(now.Year());
+  Serial.print("/");
+  Serial.print(now.Month());
+  Serial.print("/");
+  Serial.println(now.Day());
+
+  // Read the water sensor value
+  int sensorValue = digitalRead(sensorPin);
+
+  if (sensorValue == HIGH) {
+    Serial.println("Water Detected");  // When water is detected
+    digitalWrite(ledPin, HIGH);        // Turn on the LED
+  } else {
+    Serial.println("No Water Detected");  // When no water is detected
+    digitalWrite(ledPin, LOW);           // Turn off the LED
+  }
+
+  // Wait for a second before repeating
+  delay(1000);
+}
