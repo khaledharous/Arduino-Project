@@ -1,0 +1,28 @@
+#include <Stepper.h>
+
+// Define the number of steps per revolution for your motor
+const int stepsPerRevolution = 2048;  // Adjust if necessary for your motor
+
+// Initialize the stepper library on pins 8 through 11
+Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);
+
+void setup() {
+  // Set the speed at 15 RPM
+  myStepper.setSpeed(17);
+  
+  // Initialize the Serial communication
+  Serial.begin(9600);
+  Serial.println("Stepper Motor Control");
+}
+
+void loop() {
+  // Step forward one revolution للامام 
+  Serial.println("Stepping forward one revolution...");
+  myStepper.step(stepsPerRevolution);
+  delay(1000);
+  
+  // Step backward one revolution للخلف  
+  Serial.println("Stepping backward one revolution...");
+  myStepper.step(-stepsPerRevolution);
+  delay(1000);
+}
